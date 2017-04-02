@@ -1,0 +1,25 @@
+{
+  "name": "redux-driver",
+  "version": "0.1.0",
+  "description": "Event-Driven Middleware for Redux with RxJS",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NeoJRotary/redux-driver.git"
+  },
+  "author": {
+    "name": "NeoJRotary",
+    "url": "https://github.com/NeoJRotary"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/NeoJRotary/redux-driver/issues"
+  },
+  "homepage": "https://github.com/NeoJRotary/redux-driver#readme",
+  "dependencies": {
+    "rxjs": "^5.2.1-smooth"
+  }
+}
