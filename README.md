@@ -1,8 +1,9 @@
 # redux-driver
 Event-Driven Middleware for Redux with RxJS
 
-Now just testing with [socket.io](https://github.com/socketio/socket.io)
-
+Now just hard code testing with [socket.io](https://github.com/socketio/socket.io)   
+Request from client `driver.out('eventname', [Actions])`   
+Response/Push from server `driver.in('eventname', [Actions])`   
 ```
 import R from 'ramda';
 import reduxDriver from 'redux-driver';
