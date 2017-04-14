@@ -1,10 +1,11 @@
 {
   "name": "redux-driver",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Event-Driven Middleware for Redux with RxJS",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "babel": "babel ./scripts/index.js -o ./src/index.js"
   },
   "repository": {
     "type": "git",
@@ -25,7 +26,19 @@
   },
   "homepage": "https://github.com/NeoJRotary/redux-driver#readme",
   "peerDependencies": {
-    "redux": "^3.6.0",
     "rxjs": "^5.2.1-smooth"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.23.0",
+    "babel-core": "^6.24.0",
+    "babel-eslint": "^7.2.1",
+    "babel-plugin-transform-object-rest-spread": "^6.23.0",
+    "babel-preset-es2015": "^6.22.0",
+    "babel-preset-es2016": "^6.22.0",
+    "eslint": "^3.19.0",
+    "eslint-config-airbnb": "^14.1.0",
+    "eslint-plugin-jsx-a11y": "^3.0.2 || ^4.0.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-react": "^6.9.0"
   }
 }
