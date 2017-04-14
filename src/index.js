@@ -99,7 +99,7 @@ exports.default = function () {
     if (!Object.prototype.hasOwnProperty.call(driver.outList, action.type)) return;
     driver.outList[action.type].forEach(function (evt) {
       driver.obs[evt].subscribe(function (emit) {
-        return emit(action.data);
+        return emit(action);
       });
     });
   };

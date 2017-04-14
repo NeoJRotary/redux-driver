@@ -9,28 +9,26 @@ This has peer dependencies of `rxjs: ^5.0.0`.
 `npm install --save redux-driver`
 
 ### driver.out(params)
-> multi actions trigger same server event
+> Send action object to server
 
-params = ( 'event name string', [Actions Name Array] )
-> each actions trigger server event in same name
+Multi actions trigger same server event :   
+`params = ( 'event name string', [Actions Name Array] )`
 
-params = ( [Actions Name Array] )
+Each actions trigger server event in same name :   
+`params = ( [Actions Name Array] )`
 
 ### driver.in(params, _filter_)
-> dispatch multi actions in a client event
+> Get data from server
 
-params = ( 'event name string', [Actions Name Array] )
-> dispatch each actions in client event with same name
+Dispatch multi actions in a client event :  
+`params = ( 'event name string', [Actions Name Array] )`
 
-params = ( [Actions Name Array] )
-> use filter to decide dispatch or not
+Dispatch each actions in client event as same name :   
+`params = ( [Actions Name Array] )`
 
-```
-filter = function(dataFromServer, actionObject, actionName) {
-  // must return boolean
-  return true;
-}
-```
+Use filter to decide dispatch or not. Must return boolean.  
+`filter = function(dataFromServer, actionObject, actionName)`  
+
 
 ## Example
 ```

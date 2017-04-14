@@ -83,7 +83,7 @@ export default () => {
   driver.trigger = (action) => {
     if (!Object.prototype.hasOwnProperty.call(driver.outList, action.type)) return;
     driver.outList[action.type].forEach((evt) => {
-      driver.obs[evt].subscribe(emit => emit(action.data));
+      driver.obs[evt].subscribe(emit => emit(action));
     });
   };
 
