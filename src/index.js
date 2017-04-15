@@ -4,6 +4,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _Rx = require('rxjs/Rx');
 
 exports.default = function () {
@@ -21,9 +23,13 @@ exports.default = function () {
 
   driver.out = function (evt) {
     var type = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+    var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
     var arr = type;
-    if (typeof evt !== 'string') arr = evt;
+    if (typeof evt !== 'string') {
+      arr = evt;
+      if (type.constructor === {}.constructor) options = type;
+    }
     if (!Array.isArray(arr)) return;
     if (arr.length === 0) return;
 
@@ -37,26 +43,39 @@ exports.default = function () {
       if (typeof evt !== 'string') driver.outList[actType].push(v);else driver.outList[actType].push(evt);
     });
 
-    if (Array.isArray(evt)) {
-      evt.forEach(function (v) {
+    var binder = {};
+    if (typeof options.bindProps === 'function') {
+      if (options.bindProps(driver.store.getState()).constructor !== {}.constructor) return; // not object
+      binder = options.bindProps;
+    } else if (_typeof(options.bindProps) === 'object') {
+      if (options.bindProps.constructor !== {}.constructor) return; // not object
+      binder = function binder() {
+        return options.bindProps;
+      };
+    }
+
+    if (!Array.isArray(evt)) evt = [evt];
+    evt.forEach(function (v) {
+      if (typeof binder === 'function') {
+        driver.obs[v] = _Rx.Observable.create(function (obs) {
+          obs.next(function (x) {
+            var props = binder(driver.store.getState());
+            driver.socket.emit(v, Object.assign(x, props));
+          });
+        });
+      } else {
         driver.obs[v] = _Rx.Observable.create(function (obs) {
           obs.next(function (x) {
             driver.socket.emit(v, x);
           });
         });
-      });
-    } else {
-      driver.obs[evt] = _Rx.Observable.create(function (obs) {
-        obs.next(function (x) {
-          driver.socket.emit(evt, x);
-        });
-      });
-    }
+      }
+    });
   };
 
   driver.in = function (evt) {
     var type = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-    var filter = arguments[2];
+    var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
     if (typeof evt !== 'string') {
       if (!Array.isArray(evt)) return;
@@ -80,13 +99,14 @@ exports.default = function () {
         var obs = _Rx.Observable.fromEventPattern(function (h) {
           driver.socket.on(evt, h);
         });
-        if (typeof filter === 'undefined') {
+
+        if (typeof options.filter === 'undefined') {
           obs.subscribe(function (data) {
             driver.store.dispatch(driver.actions[v](data));
           });
-        } else if (typeof filter === 'function') {
+        } else if (typeof options.filter === 'function') {
           obs.subscribe(function (data) {
-            var bool = filter(data, driver.actions[v]({}), v);
+            var bool = options.filter(data, driver.actions[v]({}), v);
             if (typeof bool !== 'boolean') return;
             if (bool) driver.store.dispatch(driver.actions[v](data));
           });

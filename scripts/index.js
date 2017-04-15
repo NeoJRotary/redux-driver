@@ -13,9 +13,12 @@ export default () => {
     driver.actions = actions;
   };
 
-  driver.out = (evt, type = []) => {
+  driver.out = (evt, type = [], options = {}) => {
     let arr = type;
-    if (typeof evt !== 'string') arr = evt;
+    if (typeof evt !== 'string') {
+      arr = evt;
+      if (type.constructor === {}.constructor) options = type;
+    }
     if (!Array.isArray(arr)) return;
     if (arr.length === 0) return;
 
@@ -30,24 +33,35 @@ export default () => {
       else driver.outList[actType].push(evt);
     });
 
-    if (Array.isArray(evt)) {
-      evt.forEach((v) => {
+    let binder = {};
+    if (typeof options.bindProps === 'function') {
+      if (options.bindProps(driver.store.getState()).constructor !== {}.constructor) return; // not object
+      binder = options.bindProps;
+    } else if (typeof options.bindProps === 'object') {
+      if (options.bindProps.constructor !== {}.constructor) return; // not object
+      binder = () => options.bindProps;
+    }
+
+    if (!Array.isArray(evt)) evt = [evt];
+    evt.forEach((v) => {
+      if (typeof binder === 'function') {
+        driver.obs[v] = Observable.create((obs) => {
+          obs.next((x) => {
+            const props = binder(driver.store.getState());
+            driver.socket.emit(v, Object.assign(x, props));
+          });
+        });
+      } else {
         driver.obs[v] = Observable.create((obs) => {
           obs.next((x) => {
             driver.socket.emit(v, x);
           });
         });
-      });
-    } else {
-      driver.obs[evt] = Observable.create((obs) => {
-        obs.next((x) => {
-          driver.socket.emit(evt, x);
-        });
-      });
-    }
+      }
+    });
   };
 
-  driver.in = (evt, type = [], filter) => {
+  driver.in = (evt, type = [], options = {}) => {
     if (typeof evt !== 'string') {
       if (!Array.isArray(evt)) return;
       if (evt.length === 0) return;
@@ -65,13 +79,14 @@ export default () => {
         if (!Object.prototype.hasOwnProperty.call(driver.inList, v)) driver.inList[v] = [evt];
         else driver.inList[v].push(evt);
         const obs = Observable.fromEventPattern((h) => { driver.socket.on(evt, h); });
-        if (typeof filter === 'undefined') {
+
+        if (typeof options.filter === 'undefined') {
           obs.subscribe((data) => {
             driver.store.dispatch(driver.actions[v](data));
           });
-        } else if (typeof filter === 'function') {
+        } else if (typeof options.filter === 'function') {
           obs.subscribe((data) => {
-            const bool = filter(data, driver.actions[v]({}), v);
+            const bool = options.filter(data, driver.actions[v]({}), v);
             if (typeof bool !== 'boolean') return;
             if (bool) driver.store.dispatch(driver.actions[v](data));
           });
