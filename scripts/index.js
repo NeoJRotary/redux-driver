@@ -103,10 +103,10 @@ export default () => {
   const outDefault = { bindProps: () => ({}), filter: () => true };
   driver.out = (evt, acts = [], options = outDefault) => {
     if (!validator('out', evt, acts, options)) return;
-    options = Object.assign(outDefault, options);
+    options = Object.assign({}, outDefault, options);
     const set = [];
     if (Array.isArray(evt)) {
-      if (acts.constructor === {}.constructor) options = Object.assign(options, acts);
+      if (acts.constructor === {}.constructor) options = Object.assign({}, options, acts);
       evt.forEach(v => set.push({ evt: v, acts: [v] }));
     } else set.push({ evt, acts });
 
@@ -122,7 +122,7 @@ export default () => {
         obs.next((y) => {
           if (options.filter(y)) {
             const props = options.bindProps(driver.store.getState());
-            driver.socket.emit(x.evt, Object.assign(y, props));
+            driver.socket.emit(x.evt, Object.assign({}, y, props));
           }
         });
         obs.complete();
@@ -133,10 +133,10 @@ export default () => {
   const inDefault = { filter: () => true };
   driver.in = (evt, acts = [], options = inDefault) => {
     if (!validator('in', evt, acts, options)) return;
-    options = Object.assign(inDefault, options);
+    options = Object.assign({}, inDefault, options);
     const set = [];
     if (Array.isArray(evt)) {
-      if (acts.constructor === {}.constructor) options = Object.assign(options, acts);
+      if (acts.constructor === {}.constructor) options = Object.assign({}, options, acts);
       evt.forEach(v => set.push({ evt: v, acts: [v] }));
     } else set.push({ evt, acts });
 
@@ -158,7 +158,7 @@ export default () => {
   const trigDefault = { times: 1, filter: () => true, bindAction: false, data: {} };
   driver.trigger = (act, target = [], options = trigDefault) => {
     if (!validator('trigger', act, target, options)) return;
-    options = Object.assign(trigDefault, options);
+    options = Object.assign({}, trigDefault, options);
     act = driver.actions[act]().type;
     if (!Object.prototype.hasOwnProperty.call(driver.trigList, act)) driver.trigList[act] = [];
     const trigObj = {
@@ -171,7 +171,7 @@ export default () => {
         const bool = options.filter(x);
         if (bool) {
           let data = options.data;
-          if (options.bindAction) data = Object.assign(x, data);
+          if (options.bindAction) data = Object.assign({}, x, data);
           target.forEach(v => driver.store.dispatch(driver.actions[v](data)));
           trigObj.times -= 1;
         }

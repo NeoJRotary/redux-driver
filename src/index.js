@@ -116,10 +116,10 @@ exports.default = function () {
     var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : outDefault;
 
     if (!validator('out', evt, acts, options)) return;
-    options = Object.assign(outDefault, options);
+    options = Object.assign({}, outDefault, options);
     var set = [];
     if (Array.isArray(evt)) {
-      if (acts.constructor === {}.constructor) options = Object.assign(options, acts);
+      if (acts.constructor === {}.constructor) options = Object.assign({}, options, acts);
       evt.forEach(function (v) {
         return set.push({ evt: v, acts: [v] });
       });
@@ -137,7 +137,7 @@ exports.default = function () {
         obs.next(function (y) {
           if (options.filter(y)) {
             var props = options.bindProps(driver.store.getState());
-            driver.socket.emit(x.evt, Object.assign(y, props));
+            driver.socket.emit(x.evt, Object.assign({}, y, props));
           }
         });
         obs.complete();
@@ -153,10 +153,10 @@ exports.default = function () {
     var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : inDefault;
 
     if (!validator('in', evt, acts, options)) return;
-    options = Object.assign(inDefault, options);
+    options = Object.assign({}, inDefault, options);
     var set = [];
     if (Array.isArray(evt)) {
-      if (acts.constructor === {}.constructor) options = Object.assign(options, acts);
+      if (acts.constructor === {}.constructor) options = Object.assign({}, options, acts);
       evt.forEach(function (v) {
         return set.push({ evt: v, acts: [v] });
       });
@@ -181,13 +181,13 @@ exports.default = function () {
 
   var trigDefault = { times: 1, filter: function filter() {
       return true;
-    }, bindAction: true, data: {} };
+    }, bindAction: false, data: {} };
   driver.trigger = function (act) {
     var target = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
     var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : trigDefault;
 
     if (!validator('trigger', act, target, options)) return;
-    options = Object.assign(trigDefault, options);
+    options = Object.assign({}, trigDefault, options);
     act = driver.actions[act]().type;
     if (!Object.prototype.hasOwnProperty.call(driver.trigList, act)) driver.trigList[act] = [];
     var trigObj = {
@@ -200,7 +200,7 @@ exports.default = function () {
         var bool = options.filter(x);
         if (bool) {
           var data = options.data;
-          if (options.bindAction) data = Object.assign(x, data);
+          if (options.bindAction) data = Object.assign({}, x, data);
           target.forEach(function (v) {
             return driver.store.dispatch(driver.actions[v](data));
           });
