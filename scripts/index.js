@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs/Observable';
+import { fromEventPattern } from 'rxjs/observable/fromEventPattern';
 
 export default () => {
   const driver = {
@@ -143,7 +144,7 @@ export default () => {
     set.forEach((x) => {
       if (!Object.prototype.hasOwnProperty.call(driver.inList, x.evt)) {
         driver.inList[x.evt] = [];
-        driver.inObs[x.evt] = Observable.fromEventPattern((h) => { driver.socket.on(x.evt, h); });
+        driver.inObs[x.evt] = fromEventPattern((h) => { driver.socket.on(x.evt, h); });
       }
       driver.inList[x.evt].concat(x.acts);
       x.acts.forEach((v) => {

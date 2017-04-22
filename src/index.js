@@ -6,6 +6,8 @@ Object.defineProperty(exports, "__esModule", {
 
 var _Observable = require('rxjs/Observable');
 
+var _fromEventPattern = require('rxjs/observable/fromEventPattern');
+
 exports.default = function () {
   var driver = {
     connected: false,
@@ -165,7 +167,7 @@ exports.default = function () {
     set.forEach(function (x) {
       if (!Object.prototype.hasOwnProperty.call(driver.inList, x.evt)) {
         driver.inList[x.evt] = [];
-        driver.inObs[x.evt] = _Observable.Observable.fromEventPattern(function (h) {
+        driver.inObs[x.evt] = (0, _fromEventPattern.fromEventPattern)(function (h) {
           driver.socket.on(x.evt, h);
         });
       }
