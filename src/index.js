@@ -6,10 +6,6 @@ Object.defineProperty(exports, "__esModule", {
 
 var _Observable = require('rxjs/Observable');
 
-var _Observable2 = _interopRequireDefault(_Observable);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 exports.default = function () {
   var driver = {
     connected: false,
@@ -137,7 +133,7 @@ exports.default = function () {
         } else driver.outList[actType].push(x.evt);
       });
 
-      driver.outObs[x.evt] = _Observable2.default.create(function (obs) {
+      driver.outObs[x.evt] = _Observable.Observable.create(function (obs) {
         obs.next(function (y) {
           if (options.filter(y)) {
             var props = options.bindProps(driver.store.getState());
@@ -169,7 +165,7 @@ exports.default = function () {
     set.forEach(function (x) {
       if (!Object.prototype.hasOwnProperty.call(driver.inList, x.evt)) {
         driver.inList[x.evt] = [];
-        driver.inObs[x.evt] = _Observable2.default.fromEventPattern(function (h) {
+        driver.inObs[x.evt] = _Observable.Observable.fromEventPattern(function (h) {
           driver.socket.on(x.evt, h);
         });
       }
@@ -199,7 +195,7 @@ exports.default = function () {
       times: options.times
     };
 
-    trigObj.obs = _Observable2.default.create(function (obs) {
+    trigObj.obs = _Observable.Observable.create(function (obs) {
       obs.next(function (x) {
         var bool = options.filter(x);
         if (bool) {

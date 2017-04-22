@@ -1,6 +1,6 @@
 {
   "name": "redux-driver",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Event-Driven Middleware for Redux with RxJS",
   "main": "src/index.js",
   "scripts": {
