@@ -1,72 +1,24 @@
 # **redux-driver**
-Event-Driven Middleware for Redux with RxJS and Socket.IO
+Event/Action-Driven Middleware for Redux with RxJS and optional Socket.IO function.
 
 [![NPM version](http://img.shields.io/npm/v/redux-driver.svg?style=flat-square)](https://www.npmjs.org/package/redux-driver)
-
-Now just hard code testing with [socket.io](https://github.com/socketio/socket.io).   
-Will support RxJS only in future.
 
 ## Install
 This has peer dependencies of `rxjs: ^5.3.0`.   
 `npm install --save redux-driver`
 
 ## Usage
-### connect(store, socket, actions)
-> Connect redux, socket.io and actions to module.
+### connect(actions, _socket_)
+> Connect actions and optional socket.io object to module.
 
-Must call before any in/out binding.
+**actions** : ( redux actions' function object )  
+Required for all functions. See example below.   
+
+**_socket_** : ( socket.io object )  
+Required for in/out function.
 ****
-### out(params, _options_)
-> Send action object to server
-
-Multi actions trigger same server event :   
-`params = ( 'event name string', [Actions Name Array] )`
-
-Each actions trigger server event in same name :   
-`params = ( [Actions Name Array] )`
-
-### _options_
-```
-{
-  bindProps: (state) => {},
-  filter: (action) => {}
-}
-```
-**bindProps** : ( function return object or static object )    
-\- state : redux store current state.  `store.getState()`  
-
-Merge props to action object by `Object.assign` before emit to server. Useful for token binding. If set as function, it will be called before each emit.
-
-**filter** : ( function return boolean )   
-\- action : object return from action function
-
-Add filter to decide emit or not
-****
-
-### in(params, _options_)
-> Get data from server
-
-Dispatch multi actions in a client event :  
-`params = ( 'event name string', [Actions Name Array] )`
-
-Dispatch each actions in client event as same name :   
-`params = ( [Actions Name Array] )`
-
-### _options_
-```
-{
-  filter: (data, action, actionName) => {}
-}
-```
-**filter** : ( function return boolean )   
-\- data : data from server   
-\- action : object return from action function   
-\- actionName : name of action function   
-
-Add filter to decide dispatch action or not.
-
 ### trigger(params, _options_)
-> dispatch other actions after the action be dispatched
+> dispatch actions after one action
 
 Dispatch multi actions after detect target action in middlware :   
 `params = ( 'Target Action Name', [Actions Name Array] )`
@@ -95,8 +47,92 @@ Use target action's data to dispatch actions.
 
 **data** : ( object )  
 Data for dispatch actions. If `bindAction: true`, overwrite target action's data.   
+****
+### middle(params, _options_)
+> do something then dispatch actions
+
+When one action be dispatched, do something then dispatch other actions with returned value :   
+`params = ( 'Target Action Name', [Actions Name Array], Function )`
+
+**Function** : ( function return value, function or Promise )  
+\- action : action object from target action
+
+### _options_
+```
+{
+  filter: (action) => {}
+}
+```
+**filter** : ( function return boolean )   
+\- action : object return from action function
+
+Add filter to decide excute function or not
+****
+### out(params, _options_)
+> Send action object to server
+
+Multi actions trigger same server event :   
+`params = ( 'event name string', [Actions Name Array] )`
+
+Each actions trigger server event in same name :   
+`params = ( [Actions Name Array] )`
+
+### _options_
+```
+{
+  bindProps: (state) => {},
+  filter: (action) => {}
+}
+```
+**bindProps** : ( function return object or static object )    
+\- state : redux store current state.  `store.getState()`  
+
+Merge props to action object by `Object.assign` before emit to server. Useful for token binding. If set as function, it will be called before each emit.
+
+**filter** : ( function return boolean )   
+\- action : object return from action function
+
+Add filter to decide emit or not
+****
+### in(params, _options_)
+> Get data from server
+
+Dispatch multi actions in a client event :  
+`params = ( 'event name string', [Actions Name Array] )`
+
+Dispatch each actions in client event as same name :   
+`params = ( [Actions Name Array] )`
+
+### _options_
+```
+{
+  filter: (data, action, actionName) => {}
+}
+```
+**filter** : ( function return boolean )   
+\- data : data from server   
+\- action : object return from action function   
+\- actionName : name of action function   
+
+Add filter to decide dispatch action or not.
+   
 
 ## Example
+About actions, prepare combined file `index.js` in actions folder.
+```
+import * as user from './user';
+import * as order from './order';
+import * as product from './product';
+
+module.exports = {
+  ...user,
+  ...order,
+  ...product
+};
+```
+Or you can just connect action file to driver without combined.
+
+Example Usage:
 ```
 import reduxDriver from 'redux-driver';
 import { createStore, applyMiddleware } from 'redux';
@@ -108,18 +144,25 @@ const driver = reduxDriver();
 const socket = io('[SOCKETURL]', { transports: ['websocket'] });
 const store = createStore(reducers, applyMiddleware(driver.middleware()));
 
-driver.connect(store, socket, actions);
+driver.connect(actions, socket);
 
 driver.out(['userLogin', 'userSignup']);
 driver.in(['loginResult', 'signupResult']);
 
-// to init all datas
+// init all datas when login success
 driver.trigger('loginResult', ['getProduct', 'getTag'], {
   filter: action => action.result === 1,
   data: {
     type: 'GET'
   }
 });
+
+// after uploaded file, dispatch other actions
+driver.middle('upload', ['uploaded', 'dataUpdated'], action =>
+  fetch(`/upload`, { method: 'POST', body: action.file })
+  .then(res => res.json()),
+  { filter: action => (action.file !== '') }
+);
 
 driver.out('setData', ['setProduct', 'setTag'], {
   bindProps: (state) => ({

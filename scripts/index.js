@@ -4,9 +4,13 @@ import { fromEventPattern } from 'rxjs/observable/fromEventPattern';
 export default () => {
   const driver = {
     connected: false,
+    actions: null,
+    store: null,
+    socket: null,
     outList: {},
     inList: {},
     trigList: {},
+    middleList: {},
     outObs: {},
     inObs: {}
   };
@@ -14,96 +18,100 @@ export default () => {
   function debug(code, data) {
     switch (code) {
       case 0:
-        console.error('in/out shouldn\'t call before connect');
-        break;
+        throw new Error(`"${data}" shouldn't call before connect`);
       case 1:
-        console.error('Event Name or Actions is not string or string-array');
-        break;
+        throw new Error('Event Name or Actions is not string or string-array');
       case 2:
-        console.error('Event Name or Actions is empty array');
-        break;
+        throw new Error('Event Name or Actions is empty array');
       case 3:
-        console.error('options is not object');
-        break;
+        throw new Error('options is not object');
       case 4:
-        console.error(`Can't find Action "${data}" in connected Actions`);
-        break;
+        throw new Error(`Can't find Action "${data}" in connected Actions`);
       case 5:
-        console.error('options.times is not valid positive integer');
-        break;
+        throw new Error('options.times is not valid positive integer');
       case 6:
-        console.error('options.filter is not function or return invalid boolean');
-        break;
+        throw new Error('options.filter is not function or return invalid boolean');
       case 7:
-        console.error('options.bindProps is not object or return invalid object');
-        break;
+        throw new Error('options.bindProps is not object or return invalid object');
       case 8:
-        console.error('options.bindProps is not boolean');
-        break;
+        throw new Error('options.bindProps is not boolean');
       case 9:
-        console.error('options.data is not object');
-        break;
+        throw new Error('options.data is not object');
+      case 10:
+        throw new Error(`"${data} shouldn't call before connect to socket"`);
+      case 11:
+        throw new Error('middle function should be function');
       default:
     }
-    return false;
   }
 
   function validator(func, ...args) {
-    if (!driver.connected) return debug(0);
+    if (!driver.connected) {
+      if (func !== 'connect') debug(0, func);
+      if (args[0] === null) debug(0, func);
+      return;
+    } else if (func === 'in' || func === 'out') {
+      if (driver.socket === null) debug(10, func);
+    }
+
     const objConst = {}.constructor;
     const evt = args[0];
     let acts = args[1];
     let options = args[2];
+    if (func === 'middle') {
+      const call = args[2];
+      if (typeof call !== 'function') debug(11);
+      options = args[3];
+    }
     if (typeof evt !== 'string') {
-      if (!Array.isArray(evt)) return debug(1);
+      if (!Array.isArray(evt)) debug(1);
       if (acts.constructor === objConst) options = acts;
       acts = evt;
     }
-    if (!Array.isArray(acts)) return debug(1);
-    if (options.constructor !== objConst) return debug(3);
+    if (!Array.isArray(acts)) debug(1);
+    if (options.constructor !== objConst) debug(3);
     if (func === 'trigger') {
-      if (!Object.prototype.hasOwnProperty.call(driver.actions, evt)) return debug(4);
+      if (!Object.prototype.hasOwnProperty.call(driver.actions, evt)) debug(4);
     }
     for (let i = 0; i < acts.length; i += 1) {
-      if (typeof acts[i] !== 'string') return debug(1);
-      if (!Object.prototype.hasOwnProperty.call(driver.actions, acts[i])) return debug(4);
+      if (typeof acts[i] !== 'string') debug(1);
+      if (!Object.prototype.hasOwnProperty.call(driver.actions, acts[i])) debug(4);
     }
     const keys = Object.keys(options);
     for (let i = 0; i < keys.length; i += 1) {
       if (keys === 'times') {
-        if (typeof options.times !== 'number') return debug(5);
-        if (options.times < 0) return debug(5);
-        if (options.times !== Math.floor(options.time)) return debug(5);
+        if (typeof options.times !== 'number') debug(5);
+        if (options.times < 0) debug(5);
+        if (options.times !== Math.floor(options.time)) debug(5);
       }
       if (keys === 'filter') {
-        if (typeof options.filter !== 'function') return debug(6);
-        if (typeof options.filter() !== 'boolean') return debug(6);
+        if (typeof options.filter !== 'function') debug(6);
+        if (typeof options.filter() !== 'boolean') debug(6);
       }
       if (keys === 'bindProps') {
         if (typeof options.bindProps === 'function') {
-          if (options.bindProps(driver.store.getState()).constructor === objConst) return debug(7);
-        } else if (options.bindProps.constructor !== objConst) return debug(7);
+          if (options.bindProps(driver.store.getState()).constructor === objConst) debug(7);
+        } else if (options.bindProps.constructor !== objConst) debug(7);
       }
       if (keys === 'bindAction') {
-        if (typeof options.bindAction !== 'boolean') return debug(8);
+        if (typeof options.bindAction !== 'boolean') debug(8);
       }
       if (keys === 'data') {
-        if (options.data.constructor !== objConst) return debug(9);
+        if (options.data.constructor !== objConst) debug(9);
       }
     }
-    return true;
   }
 
-  driver.connect = (store, socket, actions) => {
-    driver.socket = socket;
-    driver.store = store;
+  driver.connect = (actions = null, socket = null) => {
+    validator('connect', actions, socket);
     driver.actions = actions;
+    driver.socket = socket;
     driver.connected = true;
   };
 
   const outDefault = { bindProps: () => ({}), filter: () => true };
   driver.out = (evt, acts = [], options = outDefault) => {
-    if (!validator('out', evt, acts, options)) return;
+    validator('out', evt, acts, options);
     options = Object.assign({}, outDefault, options);
     const set = [];
     if (Array.isArray(evt)) {
@@ -133,7 +141,7 @@ export default () => {
 
   const inDefault = { filter: () => true };
   driver.in = (evt, acts = [], options = inDefault) => {
-    if (!validator('in', evt, acts, options)) return;
+    validator('in', evt, acts, options);
     options = Object.assign({}, inDefault, options);
     const set = [];
     if (Array.isArray(evt)) {
@@ -158,7 +166,7 @@ export default () => {
 
   const trigDefault = { times: 1, filter: () => true, bindAction: false, data: {} };
   driver.trigger = (act, target = [], options = trigDefault) => {
-    if (!validator('trigger', act, target, options)) return;
+    validator('trigger', act, target, options);
     options = Object.assign({}, trigDefault, options);
     act = driver.actions[act]().type;
     if (!Object.prototype.hasOwnProperty.call(driver.trigList, act)) driver.trigList[act] = [];
@@ -184,7 +192,35 @@ export default () => {
     driver.trigList[act].push(trigObj);
   };
 
-  driver.middleware = () => () => next => (action) => {
+  const middleDefault = { filter: () => true };
+  driver.middle = (act, target = [], func, options = middleDefault) => {
+    validator('middle', act, target, func, options);
+    options = Object.assign({}, middleDefault, options);
+    act = driver.actions[act]().type;
+    if (!Object.prototype.hasOwnProperty.call(driver.middleList, act)) driver.middleList[act] = [];
+    const midObj = { target };
+
+    midObj.obs = Observable.create((obs) => {
+      obs.next((x) => {
+        const bool = options.filter(x);
+        if (bool) {
+          let data = func(x);
+          if (typeof data.then !== 'function') {
+            data = new Promise(resolve => resolve(func()));
+          }
+          data.then((val) => {
+            target.forEach(v => driver.store.dispatch(driver.actions[v](val)));
+          }, (err) => {
+            console.log('driver.middle promise err: ', err);
+          });
+        }
+      });
+    });
+    driver.middleList[act].push(midObj);
+  };
+
+  driver.middleware = () => store => next => (action) => {
+    if (driver.store === null) driver.store = store;
     if (Object.prototype.hasOwnProperty.call(driver.outList, action.type)) {
       driver.outList[action.type].forEach((evt) => {
         driver.outObs[evt].subscribe(emit => emit(action));
@@ -196,6 +232,11 @@ export default () => {
         if (x.times !== 0) x.obs.subscribe(trig => trig(action));
       });
     }
+
+    if (Object.prototype.hasOwnProperty.call(driver.middleList, action.type)) {
+      driver.middleList[action.type].forEach(x => x.obs.subscribe(func => func(action)));
+    }
+
     return next(action);
   };
 
