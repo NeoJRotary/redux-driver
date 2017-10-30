@@ -1,9 +1,8 @@
 {
-  "extends": "airbnb",
+  "extends": "airbnb-base",
   "parser": "babel-eslint",
   "env": {
     "browser": true,
-    "node": true,
     "es6": true,
     "mocha": true
   },
@@ -13,12 +12,8 @@
     "import/extensions": [
       2, "never",
       {
-        "jsx": "always",
         "json": "always"
       }
     ]
-  },
-  "globals": {
-    "google": true
   }
 }
