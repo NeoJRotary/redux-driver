@@ -44,15 +44,12 @@ export function handleEvtRegister(driver, evt, acts) {
 }
 
 export function createEmitObs(driver, evt, filter, bindProps) {
-  const obsObj = Observable.create((obs) => {
-    obs.next((actObj) => {
+  const obsObj = Observable.of((actObj) => {
       if (filter(actObj)) {
         const props = bindProps(driver.store.getState(), actObj);
         driver.socketIO.emit(evt, F.assign(actObj, props));
       }
     });
-    obs.complete();
-  });
   driver.Observables.emitter[evt] = obsObj;
 }
 
