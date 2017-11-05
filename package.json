@@ -1,10 +1,12 @@
 {
   "name": "redux-driver",
   "version": "1.0.0",
-  "description": "Event-Driven Middleware for Redux with RxJS",
+  "description": "Event-Driven / Action-Mapping Middleware for Redux with RxJS",
   "main": "lib/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test-basic": "babel-node test/test.js basic",
+    "test-actFilter": "babel-node test/test.js actFilter",
+    "test-router": "babel-node test/test.js router",
     "build": "babel src --out-dir lib"
   },
   "repository": {
@@ -42,6 +44,8 @@
     "eslint": "^4.9.0",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
+    "redux": "^3.7.2",
+    "rxjs": "^5.5.2",
     "uglifyjs-webpack-plugin": "^1.0.1",
     "webpack": "^3.8.1"
   }

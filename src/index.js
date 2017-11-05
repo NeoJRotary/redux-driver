@@ -1,30 +1,35 @@
 import F from './func';
 
-import { emit, handle, route } from './transfer';
-import { ActionFilter } from './basic';
-import driverRouter from './router';
+import { emit, receive, route } from './transfer';
+import { init, validActFilter, ActTriggerEvt, evtTrigger } from './basic';
+import { ActionFilter } from './map';
+import { linkEvents } from './event';
+
 
 export default () => {
   const driver = {
     socketIO: null,
     store: null,
-    emitter: {},
-    handler: {},
-    Observables: {
-      emitter: {},
-      handler: {}
+    map: {
+      act: {},
+      evt: {},
+      actFilter: {}
     },
-    actFilters: [],
-    $driverRouter: driverRouter()
+    events: {
+      emit: {},
+      receive: {}
+    },
+    $driverRouter: {}
   };
+  init(driver);
 
-  driver.subscribe = (evt, obj) => driver.Observables.emitter[evt].subscribe(e => e(obj));
+  driver.emitter = (sets, options) => emit(driver, sets, options);
+  driver.receiver = (sets, options) => receive(driver, sets, options);
+  driver.trigger = (evt, data) => evtTrigger(driver, evt, data);
+  driver.linkEvents = (evtA, evtB) => linkEvents(driver, evtA, evtB);
+  driver.router = (evt, sets, options) => route(driver, evt, sets, options);
 
-  driver.emitter = (...args) => emit(driver, ...args);
-  driver.handler = (...args) => handle(driver, ...args);
-  driver.router = (...args) => route(driver, ...args);
-
-  driver.actionFilter = func => new ActionFilter(func);
+  driver.actionFilter = func => new ActionFilter(driver, func);
 
   driver.setup = (obj) => {
     if (F.has(obj, 'socketIO')) driver.socketIO = obj.socketIO;
@@ -33,14 +38,8 @@ export default () => {
   driver.middleware = () => store => next => (action) => {
     if (driver.store === null) driver.store = store;
 
-    driver.actFilters.forEach((actF) => {
-      const evt = actF.valid(action);
-      if (evt !== null) driver.subscribe(evt, action);
-    });
-
-    if (F.has(driver.emitter, action.type)) {
-      driver.emitter[action.type].forEach(evt => driver.subscribe(evt, action));
-    }
+    validActFilter(driver, action);
+    ActTriggerEvt(driver, action);
 
     // if (Object.prototype.hasOwnProperty.call(driver.trigList, action.type)) {
     //   driver.trigList[action.type].forEach((x) => {

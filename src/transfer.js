@@ -1,64 +1,43 @@
-import { emitEvtRegister, handleEvtRegister, createEmitObs, createHandleObs } from './basic';
-
+// import { emitEvtRegister, receiveEvtRegister, createEmitObs, createReceiveObs } from './basic';
 import F from './func';
+import { ActMapEvt, EvtMapAct } from './map';
+import { createEmitEvt, createReceiveEvt } from './event';
 
-const onDefaultOpts = { filter: () => true };
-export function handle(driver, sets, options = onDefaultOpts) {
-  options = F.assign(onDefaultOpts, options);
-
+export function emit(driver, sets, options) {
   F.forEach(sets, (acts, evt) => {
-    acts = handleEvtRegister(driver, evt, acts);
-    createHandleObs(driver, evt, acts, options.filter);
+    ActMapEvt(driver, acts, evt);
+    createEmitEvt(driver, evt, options);
   });
 }
 
-const emitDefaultOpts = { bindProps: () => ({}), filter: () => true };
-export function emit(driver, sets, options = emitDefaultOpts) {
-  options = F.assign(emitDefaultOpts, options);
-
+export function receive(driver, sets, options) {
   F.forEach(sets, (acts, evt) => {
-    emitEvtRegister(driver, evt, acts);
-    createEmitObs(driver, evt, options.filter, options.bindProps);
+    EvtMapAct(driver, evt, acts);
+    createReceiveEvt(driver, evt, options);
   });
 }
 
-const routeDefaultOpts = {
-  outFilter: () => true,
-  outBind: () => { },
-  inFilter: () => true,
-  latestOnly: true,
-  actionFilter: null
+const routeDefault = {
+  emitter: {},
+  receiver: {},
+  latestOnly: true
 };
 
-export const route = (driver, evt, sets, options = routeDefaultOpts) => {
-  options = F.assign(routeDefaultOpts, options);
+export const route = (driver, evt, sets, options = routeDefault) => {
+  options = F.assign(routeDefault, options);
+  const emitOpts = options.emitter;
+  const receiveOtps = options.receiver;
 
-  const router = driver.$driverRouter;
+  emitOpts.router = true;
+  receiveOtps.router = true;
+  receiveOtps.latestOnly = options.latestOnly;
 
-  createEmitObs(driver, evt, options.outFilter, router.bindStamp(evt, options.outBind));
+  createEmitEvt(driver, evt, emitOpts);
+  createReceiveEvt(driver, evt, receiveOtps);
 
-  const handleFilter = router.getRoutes(evt, {
-    filter: options.inFilter,
-    latestOnly: options.latestOnly
-  });
-  createHandleObs(driver, evt, null, handleFilter);
-
-  let runResgister = true;
-  if (options.actionFilter !== null) {
-    options.actionFilter.setEvt(evt);
-    driver.actFilters.push(options.actionFilter);
-    runResgister = false;
-  }
-
+  if (!F.isArr(sets)) sets = [sets];
   sets.forEach((set) => {
-    let types;
-
-    let acts = set[0];
-    if (!F.isArr(set[0])) acts = [acts];
-
-    if (runResgister) types = emitEvtRegister(driver, evt, set[0]);
-    else types = acts.map(act => F.getActionType(act, evt));
-
-    router.setRoute(evt, types, set[1]);
+    ActMapEvt(driver, set.emitter, evt);
+    driver.$driverRouter.setRoute(evt, set.emitter, set.receiver)
   });
 };

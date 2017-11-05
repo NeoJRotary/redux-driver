@@ -1,76 +1,54 @@
 import { Observable } from 'rxjs/Observable';
-import { fromEventPattern } from 'rxjs/observable/fromEventPattern';
+import { Scheduler } from 'rxjs/Scheduler';
+import 'rxjs/add/observable/from';
+
+import driverRouter from './router';
 
 import F from './func';
 
-export function ActionFilter(func) {
-  this.evt = null;
-  this.func = func;
-  this.setEvt = (evt) => { this.evt = evt; };
-  this.valid = (obj) => {
-    if (this.func(obj)) return this.evt;
-    return null;
-  };
+export function init(driver) {
+  const { actFilter } = driver.map;
+  actFilter.list = [];
+  actFilter.obsb = Observable.from(actFilter.list, Scheduler.async);
+  driver.$driverRouter = driverRouter();
 }
 
-export function emitEvtRegister(driver, evt, acts) {
-  const evtList = driver.emitter;
-  const typeList = [];
+export function dispatch(driver, act, data) {
+  driver.store.dispatch(act(data));
+}
 
-  if (acts instanceof ActionFilter) {
-    acts.setEvt(evt);
-    driver.actFilters.push(acts);
-  } else {
-    if (!F.isArr(acts)) acts = [acts];
-    acts.forEach((type) => {
-      type = F.getActionType(type, evt);
-      if (!F.has(evtList, type)) evtList[type] = [evt];
-      else evtList[type].push(evt);
-      typeList.push(type);
-    });
+export function validActFilter(driver, act) {
+  driver.map.actFilter.obsb.subscribe((func) => {
+    const evt = func(act);
+    if (evt === false) return;
+    const { subject } = driver.events.emit[evt];
+    subject.next(act);
+  });
+}
+
+export function ActTriggerEvt(driver, act) {
+  if (!F.has(driver.map.act, act.type)) return;
+  driver.map.act[act.type].obsb.subscribe((evt) => {
+    const { subject } = driver.events.emit[evt];
+    subject.next(act);
+  });
+}
+
+export function EvtTriggerAct(driver, evt, data) {
+  driver.map.evt[evt].obsb.subscribe(act => dispatch(driver, act, data));
+}
+
+export function evtTrigger(driver, evt, data) {
+  const { receive } = driver.events;
+  if (F.Undefined(receive)) {
+    console.error(`cannot trigger undefined event ${evt}`);
+    return;
   }
-
-  return typeList;
+  receive[evt].subject.next(data);
 }
 
-export function handleEvtRegister(driver, evt, acts) {
-  const evtList = driver.handler;
-
-  if (!F.isArr(acts)) acts = [acts];
-  if (!F.has(evtList, evt)) evtList[evt] = acts;
-  else evtList[evt].push(...acts);
-
-  return acts;
-}
-
-export function createEmitObs(driver, evt, filter, bindProps) {
-  const obsObj = Observable.of((actObj) => {
-      if (filter(actObj)) {
-        const props = bindProps(driver.store.getState(), actObj);
-        driver.socketIO.emit(evt, F.assign(actObj, props));
-      }
-    });
-  driver.Observables.emitter[evt] = obsObj;
-}
-
-export function createHandleObs(driver, evt, acts, filter) {
-  const obsObj = fromEventPattern((h) => { driver.socketIO.on(evt, h); });
-
-  if (F.isArr(acts)) {
-    // common handler
-    acts.forEach((act) => {
-      obsObj.subscribe((data) => {
-        const bool = filter(data);
-        if (bool) driver.store.dispatch(act(data));
-      });
-    });
-  } else {
-    // route
-    obsObj.subscribe((data) => {
-      const actList = filter(data);
-      actList.forEach(act => driver.store.dispatch(act(data)));
-    });
-  }
-
-  driver.Observables.handler[evt] = obsObj;
+export function evtEmitter(driver, evt, act, skipSocketIO) {
+  if (driver.socketIO !== null && !skipSocketIO) driver.socketIO.emit(evt, act);
+  const { link } = driver.events.emit[evt];
+  link.forEach(e => evtTrigger(driver, e, act));
 }

@@ -1,11 +1,10 @@
 import F from './func';
 
-// const trigDefault = { times: null, filter: () => true, bindAction: false, bindProps: () => ({}) };
-// export const trigger = (act, target = [], options = trigDefault) => {
-//   // validator('trigger', act, target, options);
-//   options = Object.assign({}, trigDefault, options);
-//   act = driver.actions[act]().type;
-//   if (!Object.prototype.hasOwnProperty.call(driver.trigList, act)) driver.trigList[act] = [];
+// const spreadDefault = { times: null, filter: () => true, bindAction: false, bindProps: () => ({}) };
+// export const spread = (driver, sets, options = trigDefault) => {
+//   options = F.assign(trigDefault, options);
+
+  
 //   const trigObj = {
 //     target,
 //     times: options.times
