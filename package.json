@@ -1,6 +1,6 @@
 {
   "name": "redux-driver",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Event-Driven / Action-Mapping Middleware for Redux with RxJS",
   "main": "lib/index.js",
   "scripts": {

@@ -1,4 +1,4 @@
-# **redux-driver** 1.0.0
+# **redux-driver** 1.1.0
 Event-Driven / Action-Mapping Middleware for Redux with RxJS   
 [![NPM version](http://img.shields.io/npm/v/redux-driver.svg?style=flat-square)](https://www.npmjs.org/package/redux-driver)
 
