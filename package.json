@@ -1,6 +1,6 @@
 {
   "name": "redux-driver",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Event-Driven / Action-Mapping Middleware for Redux with RxJS",
   "main": "lib/index.js",
   "scripts": {
@@ -16,7 +16,10 @@
   "keywords": [
     "redux",
     "rxjs",
-    "socket.io"
+    "socket.io",
+    "action mapping",
+    "event driven",
+    "ajax"
   ],
   "author": {
     "name": "NeoJRotary",
